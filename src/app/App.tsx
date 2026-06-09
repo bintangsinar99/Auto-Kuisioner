@@ -188,12 +188,17 @@ function extractGoogleFormId(url: string) {
   return match?.[1] ?? "";
 }
 
-function getGoogleFormsProxyUrl(url: string) {
+function getGoogleFormsImportUrl(url: string) {
   const parsedUrl = new URL(url);
   if (parsedUrl.hostname !== "docs.google.com") {
     throw new Error("Link harus berasal dari docs.google.com/forms.");
   }
-  return `/google-forms${parsedUrl.pathname}${parsedUrl.search}`;
+
+  if (import.meta.env.DEV) {
+    return `/google-forms${parsedUrl.pathname}${parsedUrl.search}`;
+  }
+
+  return `/api/import-form?url=${encodeURIComponent(parsedUrl.toString())}`;
 }
 
 function extractPublicLoadData(html: string) {
@@ -450,7 +455,7 @@ export default function App() {
 
     setIsImportingForm(true);
     try {
-      const response = await fetch(getGoogleFormsProxyUrl(sourceUrl));
+      const response = await fetch(getGoogleFormsImportUrl(sourceUrl));
       if (!response.ok) throw new Error(`Gagal membaca form (${response.status})`);
 
       const html = await response.text();
@@ -462,7 +467,7 @@ export default function App() {
       return parsedForm;
     } catch (err: any) {
       addLog(`Impor dari link gagal: ${err?.message ?? "Unknown error"}`, "error");
-      addLog("Jalankan lewat npm run dev, atau tempel HTML/source form lalu klik Impor dari HTML.", "warning");
+      addLog("Endpoint import form belum tersedia. Coba deploy ulang, atau tempel HTML/source form lalu klik Impor dari HTML.", "warning");
       return null;
     } finally {
       setIsImportingForm(false);
