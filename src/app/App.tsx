@@ -412,10 +412,10 @@ const defaultQuestions: Question[] = [
 ];
 
 export default function App() {
-  const [formUrl, setFormUrl] = useState(currentGoogleFormUrl);
+  const [formUrl, setFormUrl] = useState("");
   const [questions, setQuestions] = useState<Question[]>(defaultQuestions);
-  const [configuredFormUrl, setConfiguredFormUrl] = useState(currentGoogleFormUrl);
-  const [formTitle, setFormTitle] = useState("Tes");
+  const [configuredFormUrl, setConfiguredFormUrl] = useState("");
+  const [formTitle, setFormTitle] = useState("Belum ada form");
   const [formHiddenFields, setFormHiddenFields] = useState<Record<string, string>>(currentGoogleFormHiddenFields);
   const [formHtml, setFormHtml] = useState("");
   const [isImportingForm, setIsImportingForm] = useState(false);
@@ -713,9 +713,9 @@ export default function App() {
     setLogs([]);
     setCurrentSubmission(0);
     setStats({ total: 0, success: 0, error: 0 });
-    setFormUrl(currentGoogleFormUrl);
-    setConfiguredFormUrl(currentGoogleFormUrl);
-    setFormTitle("Tes");
+    setFormUrl("");
+    setConfiguredFormUrl("");
+    setFormTitle("Belum ada form");
     setFormHiddenFields(currentGoogleFormHiddenFields);
     setFormHtml("");
     setQuestions(defaultQuestions);
