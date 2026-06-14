@@ -82,6 +82,121 @@ const genericSuggestionAnswers = [
   "Susunan konten bisa dirapikan agar pengguna lebih cepat memahami tujuan halaman.",
 ];
 
+type ContextualAnswerSet = {
+  keywordGroups: string[][];
+  answers: string[];
+};
+
+const contextualAnswerSets: ContextualAnswerSet[] = [
+  {
+    keywordGroups: [["landing", "page"], ["website"], ["web"], ["bumdesma"], ["mulia", "mandiri"]],
+    answers: landingPageSuggestionAnswers,
+  },
+  {
+    keywordGroups: [["layanan"], ["pelayanan"], ["kepuasan"], ["puas"], ["pengalaman"]],
+    answers: [
+      "Pelayanan sudah cukup baik, tetapi kecepatan respons dan kejelasan informasi masih bisa ditingkatkan.",
+      "Saya merasa layanan yang diberikan sudah membantu, namun alur informasi perlu dibuat lebih sederhana.",
+      "Pengalaman saya cukup positif karena layanan mudah dipahami dan kebutuhan pengguna cukup diperhatikan.",
+      "Secara umum layanan sudah memuaskan, hanya perlu konsistensi dalam respons dan tindak lanjut.",
+    ],
+  },
+  {
+    keywordGroups: [["produk"], ["harga"], ["kualitas"], ["unit", "usaha"]],
+    answers: [
+      "Produk yang ditawarkan sudah menarik, tetapi detail manfaat, harga, dan cara pemesanan perlu dibuat lebih jelas.",
+      "Kualitas produk perlu terus dijaga agar pengguna merasa percaya dan tertarik untuk kembali menggunakan layanan.",
+      "Informasi produk sebaiknya dilengkapi foto, deskripsi singkat, serta keunggulan utama agar lebih mudah dipahami.",
+      "Pilihan produk sudah cukup baik, namun promosi dan penjelasan nilai manfaatnya masih bisa diperkuat.",
+    ],
+  },
+  {
+    keywordGroups: [["aplikasi"], ["sistem"], ["fitur"], ["tampilan"], ["ui"], ["ux"], ["navigasi"]],
+    answers: [
+      "Tampilan sudah cukup mudah digunakan, tetapi navigasi dan penempatan tombol utama perlu dibuat lebih jelas.",
+      "Fitur yang ada sudah membantu, namun beberapa informasi penting sebaiknya dibuat lebih mudah ditemukan.",
+      "Aplikasi atau sistem perlu dibuat lebih responsif, rapi, dan konsisten agar pengguna nyaman saat mengaksesnya.",
+      "Bagian antarmuka bisa diperbaiki dengan susunan konten yang lebih sederhana dan tombol aksi yang lebih menonjol.",
+    ],
+  },
+  {
+    keywordGroups: [["pembelajaran"], ["materi"], ["kuliah"], ["dosen"], ["kelas"], ["belajar"]],
+    answers: [
+      "Materi pembelajaran sudah cukup jelas, tetapi contoh praktik dan penjelasan bertahap perlu ditambah.",
+      "Proses pembelajaran akan lebih baik jika penyampaian materi dibuat lebih interaktif dan mudah diikuti.",
+      "Saya berharap pembelajaran lebih banyak menggunakan studi kasus agar materi terasa lebih relevan.",
+      "Secara umum pembelajaran sudah baik, namun evaluasi dan umpan balik perlu diberikan lebih konsisten.",
+    ],
+  },
+  {
+    keywordGroups: [["fasilitas"], ["sarana"], ["prasarana"], ["ruangan"], ["tempat"]],
+    answers: [
+      "Fasilitas sudah cukup mendukung, tetapi perawatan dan ketersediaannya perlu ditingkatkan secara rutin.",
+      "Sarana yang ada sebaiknya dibuat lebih nyaman, bersih, dan mudah diakses oleh pengguna.",
+      "Beberapa fasilitas perlu diperbarui agar kegiatan dapat berjalan lebih efektif dan nyaman.",
+      "Ketersediaan fasilitas sudah membantu, namun informasi penggunaan dan perawatannya perlu diperjelas.",
+    ],
+  },
+  {
+    keywordGroups: [["kebersihan"], ["lingkungan"], ["bersih"], ["rapi"]],
+    answers: [
+      "Lingkungan sudah cukup baik, tetapi kebersihan dan kerapian perlu dijaga secara lebih konsisten.",
+      "Perlu penambahan tempat sampah dan pengawasan rutin agar lingkungan tetap nyaman digunakan.",
+      "Kondisi lingkungan akan lebih baik jika ada jadwal perawatan dan edukasi kebersihan yang jelas.",
+      "Secara umum sudah nyaman, namun beberapa area perlu lebih diperhatikan kebersihan dan penataannya.",
+    ],
+  },
+  {
+    keywordGroups: [["keamanan"], ["kenyamanan"], ["aman"], ["nyaman"]],
+    answers: [
+      "Keamanan dan kenyamanan perlu dijaga melalui pengawasan, informasi yang jelas, dan respons cepat terhadap keluhan.",
+      "Lingkungan sudah cukup nyaman, tetapi mekanisme pelaporan dan tindak lanjut perlu dibuat lebih mudah diakses.",
+      "Perlu peningkatan pengawasan di area penting agar pengguna merasa lebih aman dan nyaman.",
+      "Kenyamanan pengguna bisa ditingkatkan dengan fasilitas yang tertata, komunikasi jelas, dan pelayanan yang responsif.",
+    ],
+  },
+  {
+    keywordGroups: [["acara"], ["kegiatan"], ["event"], ["program"]],
+    answers: [
+      "Kegiatan sudah cukup menarik, tetapi publikasi jadwal dan informasi teknis perlu disampaikan lebih awal.",
+      "Program akan lebih efektif jika tujuan, alur, dan manfaatnya dijelaskan dengan ringkas kepada peserta.",
+      "Pelaksanaan kegiatan sudah baik, namun koordinasi dan dokumentasi masih bisa ditingkatkan.",
+      "Saya berharap kegiatan berikutnya lebih interaktif dan memberi ruang masukan bagi peserta.",
+    ],
+  },
+  {
+    keywordGroups: [["kendala"], ["hambatan"], ["masalah"], ["kesulitan"]],
+    answers: [
+      "Kendala utama biasanya ada pada kurangnya informasi yang jelas dan alur yang belum sepenuhnya mudah dipahami.",
+      "Kesulitan yang dirasakan adalah mencari informasi penting dengan cepat ketika dibutuhkan.",
+      "Masalah yang perlu diperhatikan adalah konsistensi layanan dan kejelasan petunjuk bagi pengguna.",
+      "Hambatan dapat dikurangi dengan panduan singkat, respons yang cepat, dan informasi yang lebih terstruktur.",
+    ],
+  },
+  {
+    keywordGroups: [["harapan"], ["diharapkan"], ["ekspektasi"]],
+    answers: [
+      "Saya berharap kualitas layanan terus ditingkatkan dan informasi penting dibuat lebih mudah diakses.",
+      "Harapannya, pengelolaan menjadi lebih rapi, responsif, dan sesuai kebutuhan pengguna.",
+      "Saya berharap ada pembaruan yang membuat pengalaman pengguna lebih praktis dan nyaman.",
+      "Ke depannya semoga layanan semakin konsisten, transparan, dan memberi manfaat yang lebih luas.",
+    ],
+  },
+  {
+    keywordGroups: [["alasan"], ["mengapa"], ["kenapa"]],
+    answers: [
+      "Karena hal tersebut dapat memudahkan pengguna memahami informasi dan mengambil keputusan dengan lebih cepat.",
+      "Alasannya karena kejelasan informasi dan kemudahan akses sangat memengaruhi kenyamanan pengguna.",
+      "Menurut saya, aspek tersebut penting karena berhubungan langsung dengan pengalaman dan kepercayaan pengguna.",
+      "Karena jika alurnya lebih jelas, pengguna tidak perlu menghabiskan banyak waktu untuk mencari informasi.",
+    ],
+  },
+  {
+    keywordGroups: [["kritik"], ["saran"], ["masukan"], ["perbaikan"], ["diperbaiki"], ["ditingkatkan"]],
+    answers: genericSuggestionAnswers,
+  },
+];
+
 type RespondentProfile = {
   name: string;
   gender: "Laki Laki" | "Perempuan";
@@ -162,6 +277,23 @@ function isLandingPageSuggestionQuestion(q: Question) {
 function isGenericSuggestionQuestion(q: Question) {
   const label = q.label.trim().toLowerCase();
   return label.includes("saran") || label.includes("perbaiki") || label.includes("diperbaiki");
+}
+
+function normalizeQuestionLabel(label: string) {
+  return label.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function matchesKeywordGroup(label: string, keywords: string[]) {
+  return keywords.every((keyword) => label.includes(keyword));
+}
+
+function getContextualTextAnswer(q: Question) {
+  const label = normalizeQuestionLabel(q.label);
+  const answerSet = contextualAnswerSets.find((set) =>
+    set.keywordGroups.some((keywords) => matchesKeywordGroup(label, keywords))
+  );
+
+  return answerSet ? pickRandom(answerSet.answers) : pickRandom(randomAnswers.text);
 }
 
 function cleanFormText(value: unknown) {
@@ -515,6 +647,9 @@ export default function App() {
       }
       if (isGenericSuggestionQuestion(q)) {
         return pickRandom(genericSuggestionAnswers);
+      }
+      if (q.type === "text") {
+        return getContextualTextAnswer(q);
       }
       if (q.type === "radio" || q.type === "dropdown" || q.type === "checkbox" || q.type === "scale") {
         const opts = getAnswerOptions(q.answer);
