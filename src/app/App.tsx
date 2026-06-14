@@ -225,6 +225,25 @@ function pickRandom<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+// Pemilih acak anti-pengulangan untuk jawaban TEKS: menghindari kalimat yang
+// baru saja dipakai (per kumpulan) agar tiap kiriman terasa dari responden
+// berbeda, namun tetap acak dan tetap relevan dengan pertanyaan.
+const recentByPool = new Map<string, string[]>();
+function pickVaried(items: string[]): string {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  const key = `${items.length}:${items[0]}`;
+  const recent = recentByPool.get(key) ?? [];
+  const fresh = items.filter((item) => !recent.includes(item));
+  const pool = fresh.length > 0 ? fresh : items;
+  const choice = pool[Math.floor(Math.random() * pool.length)];
+  recent.push(choice);
+  const maxHistory = Math.max(1, Math.ceil(items.length / 2));
+  while (recent.length > maxHistory) recent.shift();
+  recentByPool.set(key, recent);
+  return choice;
+}
+
 function getAnswerOptions(answer: string) {
   return answer.split(",").map((s) => s.trim()).filter(Boolean);
 }
@@ -234,7 +253,16 @@ function normalizeAnswerOption(value: string) {
 }
 
 function isNameQuestion(q: Question) {
-  return q.label.trim().toLowerCase().includes("nama");
+  const label = normalizeQuestionLabel(q.label);
+  if (!label.includes("nama")) return false;
+  // Tolak jika "nama" merujuk ke objek lain, bukan nama responden.
+  const otherNoun = [
+    "kegiatan", "produk", "barang", "acara", "tempat", "aplikasi",
+    "usaha", "merek", "brand", "jalan", "dosen", "mata kuliah",
+    "matkul", "instansi", "perusahaan", "kampus", "prodi",
+  ];
+  if (otherNoun.some((word) => label.includes(word))) return false;
+  return label.split(" ").length <= 4;
 }
 
 function isGenderQuestion(q: Question) {
@@ -272,11 +300,6 @@ function isLandingPageSuggestionQuestion(q: Question) {
     label.includes("bumdesma") ||
     label.includes("mulia mandiri")
   );
-}
-
-function isGenericSuggestionQuestion(q: Question) {
-  const label = q.label.trim().toLowerCase();
-  return label.includes("saran") || label.includes("perbaiki") || label.includes("diperbaiki");
 }
 
 function normalizeQuestionLabel(label: string) {
@@ -330,74 +353,264 @@ function getLandingPageTextAnswer(q: Question, fallbackTitle = "") {
   const topic = extractQuestionTopic(q.label, fallbackTitle);
 
   if (label.includes("puas")) {
-    return pickRandom([
+    return pickVaried([
       `Saya cukup puas dengan tampilan landing page ${topic} karena informasi utamanya mudah dipahami.`,
       `Tampilan landing page ${topic} sudah menarik, tetapi beberapa bagian masih bisa dibuat lebih ringkas dan rapi.`,
       `Saya merasa landing page ${topic} sudah cukup jelas, terutama dari sisi visual dan penyampaian informasi awal.`,
+      `Secara keseluruhan saya puas dengan landing page ${topic}, meski masih ada ruang untuk penyempurnaan kecil.`,
+      `Landing page ${topic} sudah cukup memuaskan karena desainnya bersih dan informasinya tidak membingungkan.`,
+      `Saya menilai landing page ${topic} sudah baik, terutama dari kemudahan membaca informasi di bagian atas.`,
     ]);
   }
 
   if (label.includes("menu") || label.includes("harga") || label.includes("lokasi") || label.includes("kontak")) {
-    return pickRandom([
+    return pickVaried([
       `Informasi menu, harga, lokasi, dan kontak pada landing page ${topic} cukup mudah ditemukan.`,
       `Bagian informasi utama di landing page ${topic} sudah membantu, tetapi akan lebih baik jika dibuat lebih menonjol.`,
       `Informasi penting seperti menu, harga, lokasi, dan kontak sebaiknya disusun lebih ringkas agar cepat terbaca.`,
+      `Menurut saya detail harga dan lokasi di landing page ${topic} sudah jelas, hanya perlu sedikit penataan ulang.`,
+      `Kontak dan menu pada landing page ${topic} mudah diakses, walau penempatannya bisa dibuat lebih terlihat.`,
+      `Informasi menu dan harga sudah cukup lengkap, tinggal memperjelas tombol kontak agar mudah dijangkau.`,
     ]);
   }
 
   if (label.includes("membantu") || label.includes("memahami")) {
-    return pickRandom([
+    return pickVaried([
       `Ya, landing page ${topic} membantu saya memahami informasi utama dengan lebih jelas.`,
       `Landing page ${topic} cukup membantu karena informasi yang ditampilkan langsung mengarah pada kebutuhan pengunjung.`,
       `Menurut saya landing page ${topic} sudah membantu, tetapi detail produk dan kontak masih bisa diperjelas lagi.`,
+      `Cukup membantu, sebab landing page ${topic} menyajikan poin penting secara berurutan dan mudah diikuti.`,
+      `Landing page ${topic} memudahkan saya menangkap gambaran umum produk hanya dalam beberapa detik.`,
+      `Ya, penyajian informasi di landing page ${topic} membuat saya lebih cepat memahami apa yang ditawarkan.`,
     ]);
   }
 
   if (label.includes("nyaman") || label.includes("mengakses") || label.includes("menjelajahi")) {
-    return pickRandom([
+    return pickVaried([
       `Saya cukup nyaman mengakses landing page ${topic} karena tampilannya sederhana dan mudah diikuti.`,
       `Landing page ${topic} terasa nyaman dijelajahi, namun jarak antar bagian dan tombol aksi bisa dibuat lebih konsisten.`,
       `Pengalaman mengakses landing page ${topic} cukup baik karena informasi tidak terlalu sulit ditemukan.`,
+      `Menjelajahi landing page ${topic} terasa lancar, terutama karena alurnya runut dari atas ke bawah.`,
+      `Saya nyaman membuka landing page ${topic} karena tampilannya ringan dan tidak membingungkan.`,
+      `Akses ke landing page ${topic} cukup mulus, meski beberapa bagian bisa dibuat lebih responsif.`,
     ]);
   }
 
   if (label.includes("tertarik") || label.includes("mengunjungi") || label.includes("membeli")) {
-    return pickRandom([
+    return pickVaried([
       `Ya, setelah melihat landing page ${topic}, saya menjadi lebih tertarik untuk mengunjungi atau membeli produknya.`,
       `Landing page ${topic} cukup meyakinkan, terutama jika informasi produk, lokasi, dan kontak dibuat lebih lengkap.`,
       `Saya cukup tertarik karena landing page ${topic} memberi gambaran awal yang jelas tentang produk dan tempatnya.`,
+      `Setelah membaca landing page ${topic}, saya jadi penasaran ingin mencoba produk atau layanannya.`,
+      `Ya, tampilan dan informasi landing page ${topic} cukup menggugah minat saya untuk datang langsung.`,
+      `Saya tertarik karena landing page ${topic} menampilkan keunggulan produk dengan cara yang menarik.`,
     ]);
   }
 
   if (label.includes("paling menarik")) {
-    return pickRandom([
+    return pickVaried([
       `Bagian yang paling menarik dari landing page ${topic} adalah tampilan produk dan informasi utama yang langsung terlihat.`,
       `Menurut saya bagian visual, foto produk, dan informasi lokasi menjadi bagian yang paling menarik.`,
       `Bagian yang paling menarik adalah penyajian informasi produk karena membantu pengunjung memahami penawaran ${topic}.`,
+      `Yang paling menarik bagi saya adalah desain bagian atas landing page ${topic} yang langsung menjelaskan inti produk.`,
+      `Bagian foto dan deskripsi singkat produk pada landing page ${topic} terasa paling menonjol dan mengundang.`,
+      `Saya paling tertarik pada bagian ajakan bertindak (call to action) yang ada di landing page ${topic}.`,
     ]);
   }
 
   if (label.includes("perlu diperbaiki") || label.includes("diperbaiki") || label.includes("perbaikan")) {
-    return pickRandom([
+    return pickVaried([
       `Bagian yang perlu diperbaiki dari landing page ${topic} adalah kejelasan informasi menu, harga, lokasi, dan tombol kontak.`,
       `Menurut saya, struktur konten dan tombol aksi pada landing page ${topic} perlu dibuat lebih menonjol.`,
       `Bagian informasi produk, foto, dan kontak perlu dirapikan agar landing page ${topic} lebih mudah dipahami.`,
+      `Landing page ${topic} sebaiknya memperbaiki kecepatan muat dan konsistensi tata letak antar bagian.`,
+      `Yang perlu dibenahi adalah ukuran teks dan kontras warna pada landing page ${topic} agar lebih nyaman dibaca.`,
+      `Menurut saya navigasi dan penempatan tombol pada landing page ${topic} masih perlu dibuat lebih intuitif.`,
     ]);
   }
 
   if (label.includes("saran") || label.includes("masukan") || label.includes("pengembangan")) {
-    return pickRandom([
+    return pickVaried([
       `Saran saya, landing page ${topic} perlu menampilkan foto produk, harga, lokasi, kontak, dan tombol pemesanan secara lebih jelas.`,
       `Untuk pengembangan landing page ${topic}, sebaiknya ditambahkan testimoni, peta lokasi, dan tombol WhatsApp yang mudah terlihat.`,
       `Landing page ${topic} bisa dikembangkan dengan konten yang lebih ringkas, visual yang konsisten, dan ajakan bertindak yang kuat.`,
+      `Masukan saya, tambahkan galeri produk dan ulasan pelanggan pada landing page ${topic} agar lebih meyakinkan.`,
+      `Sebaiknya landing page ${topic} dioptimalkan untuk tampilan ponsel dan dilengkapi tombol kontak yang menonjol.`,
+      `Saya menyarankan landing page ${topic} menambah bagian FAQ singkat dan promo agar pengunjung lebih tertarik.`,
+      `Untuk ke depan, landing page ${topic} bisa diperkaya dengan video singkat produk dan navigasi yang lebih sederhana.`,
     ]);
   }
 
-  return pickRandom([
+  return pickVaried([
     `Landing page ${topic} sudah cukup baik, tetapi informasi utama dan tombol aksi masih bisa dibuat lebih jelas.`,
     `Secara umum landing page ${topic} mudah dipahami dan cukup membantu pengunjung menemukan informasi penting.`,
     `Menurut saya landing page ${topic} perlu menjaga keseimbangan antara tampilan visual, informasi produk, dan kemudahan kontak.`,
+    `Landing page ${topic} sudah memadai, hanya perlu sedikit penyempurnaan pada penataan konten.`,
+    `Tanggapan saya cukup positif; landing page ${topic} informatif walau masih bisa dioptimalkan lagi.`,
   ]);
+}
+
+type AnswerIntent =
+  | "like"
+  | "improve"
+  | "suggest"
+  | "reason"
+  | "describe"
+  | "agree"
+  | "general";
+
+// Daftar kata kunci subjek -> frasa subjek yang dipakai dalam kalimat jawaban.
+const SUBJECT_KEYWORDS: [string[], string][] = [
+  [["landing", "page"], "landing page ini"],
+  [["website"], "website ini"],
+  [["aplikasi"], "aplikasi ini"],
+  [["sistem"], "sistem ini"],
+  [["fitur"], "fitur yang tersedia"],
+  [["pelayanan"], "pelayanan yang diberikan"],
+  [["layanan"], "layanan ini"],
+  [["produk"], "produk ini"],
+  [["pembelajaran"], "proses pembelajaran"],
+  [["materi"], "materi yang disampaikan"],
+  [["fasilitas"], "fasilitas yang tersedia"],
+  [["sarana"], "sarana yang ada"],
+  [["kegiatan"], "kegiatan ini"],
+  [["acara"], "acara ini"],
+  [["program"], "program ini"],
+  [["pelatihan"], "pelatihan ini"],
+];
+
+function detectAnswerSubject(label: string, fallbackTitle = ""): string {
+  const haystack = `${label} ${normalizeQuestionLabel(fallbackTitle)}`;
+  for (const [keys, subject] of SUBJECT_KEYWORDS) {
+    if (keys.every((keyword) => haystack.includes(keyword))) return subject;
+  }
+  return "produk dan layanan ini";
+}
+
+function detectAnswerIntent(label: string): AnswerIntent {
+  if (
+    label.includes("sukai") ||
+    label.includes("disukai") ||
+    label.includes("menarik") ||
+    label.includes("kelebihan") ||
+    label.includes("kekuatan") ||
+    label.includes("paling baik")
+  ) {
+    return "like";
+  }
+  if (
+    label.includes("perlu diperbaiki") ||
+    label.includes("diperbaiki") ||
+    label.includes("perbaikan") ||
+    label.includes("kekurangan") ||
+    label.includes("kelemahan") ||
+    label.includes("ditingkatkan")
+  ) {
+    return "improve";
+  }
+  if (
+    label.includes("saran") ||
+    label.includes("masukan") ||
+    label.includes("rekomendasi") ||
+    label.includes("pengembangan") ||
+    label.includes("harapan") ||
+    label.includes("diharapkan")
+  ) {
+    return "suggest";
+  }
+  if (label.includes("mengapa") || label.includes("kenapa") || label.includes("alasan")) {
+    return "reason";
+  }
+  if (
+    label.includes("bagaimana") ||
+    label.includes("jelaskan") ||
+    label.includes("uraikan") ||
+    label.includes("ceritakan") ||
+    label.includes("pengalaman")
+  ) {
+    return "describe";
+  }
+  if (label.includes("apakah") || label.includes("setuju")) {
+    return "agree";
+  }
+  return "general";
+}
+
+function capFirst(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+// Menyusun jawaban teks yang acak namun tetap relevan dengan subjek &
+// maksud pertanyaan. Kombinasi pembuka + penutup menghasilkan banyak variasi.
+function composeContextualAnswer(
+  q: Question,
+  fallbackTitle = "",
+  intent?: AnswerIntent,
+): string {
+  const label = normalizeQuestionLabel(q.label);
+  const subject = detectAnswerSubject(label, fallbackTitle);
+  const resolvedIntent = intent ?? detectAnswerIntent(label);
+
+  const pools: Record<AnswerIntent, string[]> = {
+    like: [
+      `Hal yang paling saya sukai dari ${subject} adalah kemudahan penggunaannya dan informasi yang jelas.`,
+      `Saya menyukai ${subject} karena tampilannya rapi dan mudah dipahami.`,
+      `Yang menarik dari ${subject} adalah pelayanannya yang cukup responsif dan ramah.`,
+      `Kelebihan ${subject} menurut saya ada pada kualitas dan konsistensinya.`,
+      `Saya cukup terkesan dengan ${subject} karena prosesnya praktis dan tidak berbelit.`,
+    ],
+    improve: [
+      `Menurut saya ${subject} masih perlu diperbaiki pada kecepatan layanan dan kejelasan informasi.`,
+      `Bagian yang perlu ditingkatkan dari ${subject} adalah kemudahan proses dan respons terhadap keluhan.`,
+      `${capFirst(subject)} sebaiknya diperbaiki pada konsistensi kualitas dan penyajian informasinya.`,
+      `Saya rasa ${subject} masih kurang pada bagian komunikasi dan kemudahan akses.`,
+      `Hal yang perlu dibenahi dari ${subject} adalah ketepatan waktu dan kelengkapan informasinya.`,
+    ],
+    suggest: [
+      `Saran saya, ${subject} perlu ditingkatkan kualitas dan kecepatan layanannya.`,
+      `Untuk pengembangan ke depan, ${subject} sebaiknya dilengkapi informasi yang lebih jelas dan mudah diakses.`,
+      `Saya berharap ${subject} terus diperbaiki agar lebih nyaman dan memuaskan pengguna.`,
+      `Masukan saya, ${subject} bisa dibuat lebih praktis dengan proses yang lebih sederhana.`,
+      `Sebaiknya ${subject} menambahkan dukungan dan komunikasi yang lebih responsif.`,
+    ],
+    reason: [
+      `Karena ${subject} berpengaruh langsung terhadap kenyamanan dan kepuasan saya.`,
+      `Alasannya, ${subject} sudah cukup memenuhi kebutuhan meskipun masih ada ruang perbaikan.`,
+      `Sebab ${subject} memberikan pengalaman yang cukup baik secara keseluruhan.`,
+      `Karena kualitas ${subject} cukup memengaruhi keputusan saya untuk kembali menggunakannya.`,
+    ],
+    describe: [
+      `Secara umum pengalaman saya dengan ${subject} cukup baik dan memuaskan.`,
+      `Menurut saya ${subject} sudah berjalan baik, meskipun beberapa hal masih bisa ditingkatkan.`,
+      `Pengalaman menggunakan ${subject} cukup menyenangkan karena prosesnya mudah diikuti.`,
+      `Sejauh ini ${subject} sudah memadai dan membantu memenuhi kebutuhan saya.`,
+    ],
+    agree: [
+      `Ya, menurut saya ${subject} sudah cukup baik dan sesuai harapan.`,
+      `Saya setuju karena ${subject} cukup membantu memenuhi kebutuhan saya.`,
+      `Secara umum saya sependapat, sebab ${subject} sudah berjalan cukup baik.`,
+    ],
+    general: [
+      `Menurut saya ${subject} sudah cukup baik, walaupun masih ada beberapa hal yang bisa ditingkatkan.`,
+      `Secara keseluruhan ${subject} cukup memuaskan, dengan beberapa catatan kecil untuk perbaikan.`,
+      `Tanggapan saya terhadap ${subject} cukup positif dan sesuai dengan yang saya harapkan.`,
+      `Saya rasa ${subject} sudah berjalan dengan baik dan cukup sesuai kebutuhan.`,
+    ],
+  };
+
+  const base = pickVaried(pools[resolvedIntent] ?? pools.general);
+  const closers = [
+    "",
+    "",
+    "",
+    " Semoga ke depannya bisa terus ditingkatkan.",
+    " Secara umum saya cukup puas dengan hal ini.",
+  ];
+  return `${base}${pickRandom(closers)}`.trim();
+}
+
+function buildNeutralContextualAnswer(q: Question, fallbackTitle = "") {
+  return composeContextualAnswer(q, fallbackTitle);
 }
 
 function getContextualTextAnswer(q: Question, fallbackTitle = "") {
@@ -407,11 +620,19 @@ function getContextualTextAnswer(q: Question, fallbackTitle = "") {
     return getLandingPageTextAnswer(q, fallbackTitle);
   }
 
+  // Maksud (intent) yang jelas dijawab dengan komposer sadar-subjek &
+  // sadar-intent agar jawaban acak tetapi tetap relevan dengan pertanyaan.
+  const intent = detectAnswerIntent(label);
+  if (intent !== "general") {
+    return composeContextualAnswer(q, fallbackTitle, intent);
+  }
+
   const answerSet = contextualAnswerSets.find((set) =>
     set.keywordGroups.some((keywords) => matchesKeywordGroup(label, keywords))
   );
 
-  return answerSet ? pickRandom(answerSet.answers) : pickRandom(randomAnswers.text);
+  if (answerSet) return pickVaried(answerSet.answers);
+  return buildNeutralContextualAnswer(q, fallbackTitle);
 }
 
 function cleanFormText(value: unknown) {
@@ -677,6 +898,7 @@ export default function App() {
   const [currentSubmission, setCurrentSubmission] = useState(0);
   const [stats, setStats] = useState({ total: 0, success: 0, error: 0 });
   const [activeTab, setActiveTab] = useState("questions");
+  const [testMode, setTestMode] = useState(true);
 
   const stopRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -755,16 +977,13 @@ export default function App() {
         return String(Math.floor(Math.random() * 8) + 18);
       }
       if (isVerbalExampleQuestion(q)) {
-        return pickRandom(verbalExampleAnswers);
+        return pickVaried(verbalExampleAnswers);
       }
       if (isLandingPageSuggestionQuestion(q)) {
         return getLandingPageTextAnswer(q, formTitle);
       }
       if (isSafetySuggestionQuestion(q)) {
-        return pickRandom(safetySuggestionAnswers);
-      }
-      if (isGenericSuggestionQuestion(q)) {
-        return pickRandom(genericSuggestionAnswers);
+        return pickVaried(safetySuggestionAnswers);
       }
       if (q.type === "text") {
         return getContextualTextAnswer(q, formTitle);
@@ -776,7 +995,7 @@ export default function App() {
       if (q.type === "scale") {
         return pickRandom(randomAnswers.scale);
       }
-      return pickRandom(randomAnswers.text);
+      return pickVaried(randomAnswers.text);
     }
     return q.answer;
   };
@@ -825,9 +1044,57 @@ export default function App() {
     });
   };
 
+  const buildAnswerMatrix = (count: number): Record<string, string>[] => {
+    const rows: Record<string, string>[] = [];
+    for (let i = 0; i < count; i++) {
+      const profile = pickRandom(respondentProfiles);
+      const row: Record<string, string> = {};
+      for (const q of questions) {
+        row[q.label] = getAnswer(q, profile);
+      }
+      rows.push(row);
+    }
+    return rows;
+  };
+
+  const exportPreviewCsv = () => {
+    if (questions.length === 0) {
+      addLog("Tidak ada pertanyaan untuk diekspor.", "error");
+      return;
+    }
+    const headers = questions.map((q) => q.label);
+    const rows = buildAnswerMatrix(submissionCount);
+    const escapeCell = (value: string) =>
+      `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const lines = [headers.map(escapeCell).join(",")];
+    for (const row of rows) {
+      lines.push(headers.map((h) => escapeCell(row[h])).join(","));
+    }
+    const csv = "\ufeff" + lines.join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `pratinjau-jawaban-${Date.now()}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    addLog(
+      `Pratinjau ${rows.length} jawaban diekspor ke CSV. Tidak ada yang dikirim ke Google Form.`,
+      "success",
+    );
+  };
+
   const startBot = async () => {
     if (!formUrl.trim()) {
       addLog("URL form tidak boleh kosong!", "error");
+      return;
+    }
+    if (formUrl.includes(currentGoogleFormId)) {
+      addLog("Pengiriman ke Google Form penelitian asli diblokir oleh tool ini.", "error");
+      addLog(
+        'Untuk pengujian, gunakan Google Form uji milikmu sendiri (URL berbeda), atau klik "Pratinjau & Ekspor CSV".',
+        "warning",
+      );
       return;
     }
 
@@ -873,12 +1140,16 @@ export default function App() {
     setActiveTab("console");
 
     const submitUrl = getSubmitUrl(formUrl.trim());
+    const effectiveCount = submissionCount;
+    if (testMode) {
+      addLog("MODE UJI aktif: jawaban teks ditandai [TEST].", "warning");
+    }
 
     addLog("=".repeat(40), "system");
     addLog("FormBot Auto-Filler v2.0 dimulai", "system");
     addLog(`Target URL: ${submitUrl}`, "system");
     addLog("Mode: PENGIRIMAN OTOMATIS NYATA ke Google Forms", "success");
-    addLog(`Jumlah pengiriman: ${submissionCount}`, "system");
+    addLog(`Jumlah pengiriman: ${effectiveCount}`, "system");
     addLog(`Delay: ${useRandomDelay ? "Acak (1-5 detik)" : `${delaySeconds} detik`}`, "system");
     addLog(`Pertanyaan dengan Entry ID: ${activeQuestions.length - missingEntryIds.length}/${activeQuestions.length}`, "system");
     if (activeHiddenFields.pageHistory) {
@@ -889,7 +1160,7 @@ export default function App() {
     let successCount = 0;
     let errorCount = 0;
 
-    for (let i = 1; i <= submissionCount; i++) {
+    for (let i = 1; i <= effectiveCount; i++) {
       if (stopRef.current) {
         addLog("Bot dihentikan oleh pengguna.", "warning");
         break;
@@ -904,7 +1175,10 @@ export default function App() {
 
       for (const q of activeQuestions) {
         if (stopRef.current) break;
-        const answer = getAnswer(q, profile);
+        let answer = getAnswer(q, profile);
+        if (testMode && q.type === "text") {
+          answer = `[TEST] ${answer}`;
+        }
 
         if (q.entryId.trim()) {
           const key = q.entryId.trim().startsWith("entry.") ? q.entryId.trim() : `entry.${q.entryId.trim()}`;
@@ -933,7 +1207,7 @@ export default function App() {
 
       setCurrentSubmission(i);
 
-      if (i < submissionCount && !stopRef.current) {
+      if (i < effectiveCount && !stopRef.current) {
         const delay = useRandomDelay
           ? Math.floor(Math.random() * 4 + 1)
           : delaySeconds;
@@ -1082,6 +1356,21 @@ export default function App() {
 
               <TabsContent value="settings" className="mt-3">
                 <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-5">
+                  {/* Mode Uji (aman) */}
+                  <div className="flex items-center justify-between">
+                    <div className="pr-3">
+                      <Label className="text-sm">Mode Uji (aman)</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Tandai jawaban teks dengan [TEST] dan blokir pengiriman ke form penelitian asli.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={testMode}
+                      onCheckedChange={setTestMode}
+                      disabled={isRunning}
+                    />
+                  </div>
+
                   {/* Submission Count */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
@@ -1186,6 +1475,18 @@ export default function App() {
                 <RotateCcw className="w-4 h-4" />
               </Button>
             </div>
+
+            {/* Preview & Export (no network submit) */}
+            <Button
+              onClick={exportPreviewCsv}
+              variant="outline"
+              className="h-11 gap-2"
+              disabled={isRunning}
+              title="Hasilkan jawaban kontekstual lalu unduh CSV tanpa mengirim ke form"
+            >
+              <Download className="w-4 h-4" />
+              Pratinjau & Ekspor CSV (tanpa kirim)
+            </Button>
 
             {/* Stats */}
             <StatsPanel
