@@ -287,8 +287,126 @@ function matchesKeywordGroup(label: string, keywords: string[]) {
   return keywords.every((keyword) => label.includes(keyword));
 }
 
-function getContextualTextAnswer(q: Question) {
+function cleanTopicCandidate(candidate: string) {
+  const cleaned = candidate
+    .replace(/["“”]/g, "")
+    .replace(/^(ini|tersebut|yang|untuk|pada|dari|tentang)\s+/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const normalized = normalizeQuestionLabel(cleaned);
+  const rejectedStarts = [
+    "mudah", "membantu", "nyaman", "menarik", "perlu", "saya", "anda", "pengunjung",
+    "informasi", "tampilan", "bagian", "setelah", "dengan", "dalam", "secara"
+  ];
+
+  if (!cleaned || rejectedStarts.some((word) => normalized.startsWith(word))) return "";
+  if (normalized.split(" ").length > 5) return "";
+
+  return cleaned;
+}
+
+function extractQuestionTopic(label: string, fallbackTitle = "") {
+  const sources = [label, fallbackTitle];
+  const patterns = [
+    /landing\s+page\s+([^.?]+)/i,
+    /(?:website|web)\s+([^.?]+)/i,
+    /(?:tentang|untuk|pada|dari)\s+([^.?]+)/i,
+  ];
+
+  for (const source of sources) {
+    for (const pattern of patterns) {
+      const match = source.match(pattern);
+      const topic = match ? cleanTopicCandidate(match[1]) : "";
+      if (topic) return topic;
+    }
+  }
+
+  return "halaman tersebut";
+}
+
+function getLandingPageTextAnswer(q: Question, fallbackTitle = "") {
   const label = normalizeQuestionLabel(q.label);
+  const topic = extractQuestionTopic(q.label, fallbackTitle);
+
+  if (label.includes("puas")) {
+    return pickRandom([
+      `Saya cukup puas dengan tampilan landing page ${topic} karena informasi utamanya mudah dipahami.`,
+      `Tampilan landing page ${topic} sudah menarik, tetapi beberapa bagian masih bisa dibuat lebih ringkas dan rapi.`,
+      `Saya merasa landing page ${topic} sudah cukup jelas, terutama dari sisi visual dan penyampaian informasi awal.`,
+    ]);
+  }
+
+  if (label.includes("menu") || label.includes("harga") || label.includes("lokasi") || label.includes("kontak")) {
+    return pickRandom([
+      `Informasi menu, harga, lokasi, dan kontak pada landing page ${topic} cukup mudah ditemukan.`,
+      `Bagian informasi utama di landing page ${topic} sudah membantu, tetapi akan lebih baik jika dibuat lebih menonjol.`,
+      `Informasi penting seperti menu, harga, lokasi, dan kontak sebaiknya disusun lebih ringkas agar cepat terbaca.`,
+    ]);
+  }
+
+  if (label.includes("membantu") || label.includes("memahami")) {
+    return pickRandom([
+      `Ya, landing page ${topic} membantu saya memahami informasi utama dengan lebih jelas.`,
+      `Landing page ${topic} cukup membantu karena informasi yang ditampilkan langsung mengarah pada kebutuhan pengunjung.`,
+      `Menurut saya landing page ${topic} sudah membantu, tetapi detail produk dan kontak masih bisa diperjelas lagi.`,
+    ]);
+  }
+
+  if (label.includes("nyaman") || label.includes("mengakses") || label.includes("menjelajahi")) {
+    return pickRandom([
+      `Saya cukup nyaman mengakses landing page ${topic} karena tampilannya sederhana dan mudah diikuti.`,
+      `Landing page ${topic} terasa nyaman dijelajahi, namun jarak antar bagian dan tombol aksi bisa dibuat lebih konsisten.`,
+      `Pengalaman mengakses landing page ${topic} cukup baik karena informasi tidak terlalu sulit ditemukan.`,
+    ]);
+  }
+
+  if (label.includes("tertarik") || label.includes("mengunjungi") || label.includes("membeli")) {
+    return pickRandom([
+      `Ya, setelah melihat landing page ${topic}, saya menjadi lebih tertarik untuk mengunjungi atau membeli produknya.`,
+      `Landing page ${topic} cukup meyakinkan, terutama jika informasi produk, lokasi, dan kontak dibuat lebih lengkap.`,
+      `Saya cukup tertarik karena landing page ${topic} memberi gambaran awal yang jelas tentang produk dan tempatnya.`,
+    ]);
+  }
+
+  if (label.includes("paling menarik")) {
+    return pickRandom([
+      `Bagian yang paling menarik dari landing page ${topic} adalah tampilan produk dan informasi utama yang langsung terlihat.`,
+      `Menurut saya bagian visual, foto produk, dan informasi lokasi menjadi bagian yang paling menarik.`,
+      `Bagian yang paling menarik adalah penyajian informasi produk karena membantu pengunjung memahami penawaran ${topic}.`,
+    ]);
+  }
+
+  if (label.includes("perlu diperbaiki") || label.includes("diperbaiki") || label.includes("perbaikan")) {
+    return pickRandom([
+      `Bagian yang perlu diperbaiki dari landing page ${topic} adalah kejelasan informasi menu, harga, lokasi, dan tombol kontak.`,
+      `Menurut saya, struktur konten dan tombol aksi pada landing page ${topic} perlu dibuat lebih menonjol.`,
+      `Bagian informasi produk, foto, dan kontak perlu dirapikan agar landing page ${topic} lebih mudah dipahami.`,
+    ]);
+  }
+
+  if (label.includes("saran") || label.includes("masukan") || label.includes("pengembangan")) {
+    return pickRandom([
+      `Saran saya, landing page ${topic} perlu menampilkan foto produk, harga, lokasi, kontak, dan tombol pemesanan secara lebih jelas.`,
+      `Untuk pengembangan landing page ${topic}, sebaiknya ditambahkan testimoni, peta lokasi, dan tombol WhatsApp yang mudah terlihat.`,
+      `Landing page ${topic} bisa dikembangkan dengan konten yang lebih ringkas, visual yang konsisten, dan ajakan bertindak yang kuat.`,
+    ]);
+  }
+
+  return pickRandom([
+    `Landing page ${topic} sudah cukup baik, tetapi informasi utama dan tombol aksi masih bisa dibuat lebih jelas.`,
+    `Secara umum landing page ${topic} mudah dipahami dan cukup membantu pengunjung menemukan informasi penting.`,
+    `Menurut saya landing page ${topic} perlu menjaga keseimbangan antara tampilan visual, informasi produk, dan kemudahan kontak.`,
+  ]);
+}
+
+function getContextualTextAnswer(q: Question, fallbackTitle = "") {
+  const label = normalizeQuestionLabel(q.label);
+
+  if (label.includes("landing page") || label.includes("website") || label.includes("web")) {
+    return getLandingPageTextAnswer(q, fallbackTitle);
+  }
+
   const answerSet = contextualAnswerSets.find((set) =>
     set.keywordGroups.some((keywords) => matchesKeywordGroup(label, keywords))
   );
@@ -640,7 +758,7 @@ export default function App() {
         return pickRandom(verbalExampleAnswers);
       }
       if (isLandingPageSuggestionQuestion(q)) {
-        return pickRandom(landingPageSuggestionAnswers);
+        return getLandingPageTextAnswer(q, formTitle);
       }
       if (isSafetySuggestionQuestion(q)) {
         return pickRandom(safetySuggestionAnswers);
@@ -649,7 +767,7 @@ export default function App() {
         return pickRandom(genericSuggestionAnswers);
       }
       if (q.type === "text") {
-        return getContextualTextAnswer(q);
+        return getContextualTextAnswer(q, formTitle);
       }
       if (q.type === "radio" || q.type === "dropdown" || q.type === "checkbox" || q.type === "scale") {
         const opts = getAnswerOptions(q.answer);
